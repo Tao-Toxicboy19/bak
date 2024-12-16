@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "esModuleInterop": true,
+    "allowJs": true,
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/config/Database.ts"
+, "src/controllers/crane.controller.ts"  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

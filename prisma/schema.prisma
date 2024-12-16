@@ -1,0 +1,361 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://sugarotpzlab_crane:P%40ssw0rd%3BCrane@127.0.0.1:3306/sugarotpzlab_crane"
+  // url      = "mysql://root:PVWtLvJGNUBPlmj71R6bAao=@10.148.0.2/sugarotpzlab_crane"
+}
+
+model approved_order {
+  id              Int           @id @default(autoincrement())
+  order_id        Int
+  FTS_id          Int
+  bulk            Int
+  real_start_time String?
+  real_end_time   String?
+  group           Int           @default(1)
+  craneId         Int?
+  fts             fts           @relation(fields: [FTS_id], references: [id], onDelete: NoAction, map: "Approved_order_FTS_id_fkey")
+  carrier_order   carrier_order @relation(fields: [order_id], references: [or_id], onDelete: NoAction, map: "Approved_order_order_id_fkey")
+  crane           crane?        @relation(fields: [craneId], references: [id])
+
+  @@index([FTS_id], map: "Approved_order_FTS_id_fkey")
+  @@index([order_id], map: "Approved_order_order_id_fkey")
+  @@index([craneId], map: "approved_order_craneId_fkey")
+}
+
+model assign_order {
+  order_id      Int
+  FTS_id        Int
+  bulk          Int
+  start_time    String
+  is_active     Boolean       @default(true)
+  group         Int           @default(1)
+  fts           fts           @relation(fields: [FTS_id], references: [id], onDelete: NoAction, map: "Assign_order_FTS_id_fkey")
+  carrier_order carrier_order @relation(fields: [order_id], references: [or_id], onDelete: NoAction, onUpdate: NoAction, map: "Assign_order_ibfk_1")
+
+  @@id([order_id, FTS_id, bulk])
+  @@index([FTS_id], map: "Assign_order_FTS_id_fkey")
+}
+
+model cargo {
+  cargo_id                Int                       @id @default(autoincrement())
+  cargo_name              String?                   @db.VarChar(50)
+  premium_rate            Float?                    @db.Float
+  cargo_crane             cargo_crane[]
+  cargo_order             cargo_order[]
+  solution_crane_schedule solution_crane_schedule[]
+}
+
+model cargo_crane {
+  cargo_crane_id   Int    @id @default(autoincrement())
+  crane_id         Int
+  cargo_id         Int
+  FTS_id           Int
+  consumption_rate Float
+  work_rate        Float  @db.Float
+  category         String @db.VarChar(30)
+  cargo            cargo  @relation(fields: [cargo_id], references: [cargo_id], onDelete: NoAction, onUpdate: NoAction, map: "ca_id")
+  crane            crane  @relation(fields: [crane_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "crane_id")
+  fts              fts    @relation(fields: [FTS_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fl_id")
+
+  @@index([cargo_id], map: "ca_id")
+  @@index([crane_id], map: "crane_id")
+  @@index([FTS_id], map: "fl_id")
+}
+
+model bulks {
+  id                  Int          @id @default(autoincrement())
+  load_bulk           Float        @db.Float
+  cargo_orderOrder_id Int?
+  group               Int          @default(1)
+  cargo_order         cargo_order? @relation(fields: [cargo_orderOrder_id], references: [order_id])
+
+  @@index([cargo_orderOrder_id], map: "bulks_cargo_orderOrder_id_fkey")
+}
+
+model cargo_order {
+  order_id      Int           @id
+  cargo_id      Int
+  load          Float
+  bulk          Int
+  group         Int           @default(1)
+  Bulks         bulks[]
+  cargo         cargo         @relation(fields: [cargo_id], references: [cargo_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_cargo_id")
+  carrier_order carrier_order @relation(fields: [order_id], references: [or_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_carrier_order_id")
+
+  @@index([cargo_id], map: "fk_cargo_id")
+}
+
+model carrier {
+  cr_id                   Int                       @id @default(autoincrement())
+  carrier_name            String?                   @db.VarChar(100)
+  holder                  String?                   @db.VarChar(100)
+  maxcapacity             Float?
+  burden                  Float?
+  Width                   Float?
+  carrier_max_FTS         Int?
+  carrier_max_crane       Int?
+  length                  Float?
+  has_crane               String?
+  carrier_order           carrier_order[]
+  solution_crane_schedule solution_crane_schedule[]
+}
+
+model carrier_order {
+  or_id                                     Int                      @id @default(autoincrement())
+  cr_id                                     Int
+  category                                  String?                  @db.VarChar(100)
+  arrival_time                              String?                  @db.VarChar(30)
+  deadline_time                             String?                  @db.VarChar(30)
+  latitude                                  Float?
+  longitude                                 Float?
+  maxFTS                                    Int
+  penalty_rate                              Float                    @db.Float
+  reward_rate                               Float                    @db.Float
+  status_order                              String                   @default("Newer") @db.VarChar(30)
+  rel_start_time                            String?                  @db.VarChar(30)
+  rel_finish_time                           String?                  @db.VarChar(30)
+  reason                                    String?                  @db.VarChar(30)
+  group                                     Int                      @default(1)
+  description_of_cargo                      String?
+  name_of_agent                             String?
+  name_of_consignee                         String?
+  name_of_master                            String?
+  name_of_owner                             String?
+  name_of_shipper                           String?
+  name_of_stevedore                         String?
+  name_of_surveyots                         String?
+  name_of_vessel                            String?
+  port_of_discharging_cargo                 String?
+  port_of_loading_cargo                     String?
+  quantity_of_cargo                         String?
+  vessel_of_readiness_tendered_and_accepted String?
+  w                                         String?
+  approved_order                            approved_order[]
+  assign_order                              assign_order[]
+  cargo_order                               cargo_order?
+  carrier                                   carrier                  @relation(fields: [cr_id], references: [cr_id], onDelete: NoAction, onUpdate: NoAction, map: "cr_id")
+  solution_carrier_order                    solution_carrier_order[]
+
+  @@index([cr_id], map: "cr_id")
+}
+
+model crane {
+  id                      Int                       @id @default(autoincrement())
+  crane_name              String                    @db.VarChar(30)
+  FTS_id                  Int
+  setuptime_crane         Int
+  wage_month_cost         Float                     @db.Float
+  approved_order          approved_order[]
+  cargo_crane             cargo_crane[]
+  fts                     fts                       @relation(fields: [FTS_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "FTS_id")
+  crane_solution          crane_solution[]
+  maintain_crane          maintain_crane[]
+  solution_crane_schedule solution_crane_schedule[]
+
+  @@index([FTS_id], map: "FTS_id")
+}
+
+model crane_solution {
+  solution_id                      Int
+  FTS_id                           Int
+  crane_id                         Int
+  total_cost                       Float     @db.Float
+  total_consumption_cost           Float     @db.Float
+  total_wage_cost                  Float     @db.Float
+  penality_cost                    Float     @db.Float
+  total_reward                     Float     @db.Float
+  total_late_time                  Float     @db.Float
+  total_early_time                 Float     @db.Float
+  total_operation_consumption_cost Float     @db.Float
+  total_operation_time             Float     @db.Float
+  total_preparation_crane_time     Float     @db.Float
+  date                             DateTime  @db.Date
+  plan                             String    @default("A")
+  solutions                        solutions @relation(fields: [solution_id], references: [id], onUpdate: Restrict, map: "crane_solution_ibfk_1")
+  crane                            crane     @relation(fields: [crane_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_crane_id")
+  fts                              fts       @relation(fields: [FTS_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_fts_id")
+
+  @@id([solution_id, FTS_id, crane_id])
+  @@index([crane_id], map: "fk_crane_id")
+  @@index([FTS_id], map: "fk_fts_id")
+}
+
+model employee {
+  employee_id  Int           @id @default(autoincrement())
+  prefix       String
+  frist_name   String
+  last_name    String
+  salary       Float?
+  employee_FTS employee_FTS?
+}
+
+model employee_FTS {
+  start_datetime String?
+  end_datetime   String?
+  remark         String?
+  donkey         String?
+  employee_id    Int      @unique
+  ftsId          Int?
+  employee       employee @relation(fields: [employee_id], references: [employee_id], onDelete: NoAction)
+  fts            fts?     @relation(fields: [ftsId], references: [id])
+
+  @@index([ftsId], map: "employee_FTS_ftsId_fkey")
+}
+
+model fts {
+  id             Int              @id @default(autoincrement())
+  FTS_name       String           @db.VarChar(30)
+  lat            Float
+  lng            Float
+  setuptime_FTS  Int
+  speed          Int
+  approved_order approved_order[]
+  assign_order   assign_order[]
+  cargo_crane    cargo_crane[]
+  crane          crane[]
+  crane_solution crane_solution[]
+  employee_FTS   employee_FTS[]
+  fts_solution   fts_solution[]
+  maintain_fts   maintain_fts[]
+}
+
+model fts_solution {
+  solution_id                   Int
+  FTS_id                        Int
+  total_preparation_FTS_time    Int
+  total_travel_consumption_cost Int
+  total_travel_distance         Int
+  datetime                      DateTime @db.Date
+  fts                           fts      @relation(fields: [FTS_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_fts_solution")
+
+  @@id([solution_id, FTS_id])
+  @@index([FTS_id], map: "fk_fts_solution")
+}
+
+model maintain_crane {
+  maintain_crane_id Int     @id @default(autoincrement())
+  desc              String? @db.VarChar(50)
+  downtime          String? @db.VarChar(50)
+  start_time        String? @db.VarChar(50)
+  mt_crane_id       Int
+  group             Int     @default(1)
+  noti              Boolean @default(false)
+  noti_day          Int     @default(30)
+  crane             crane   @relation(fields: [mt_crane_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "mt_fk")
+
+  @@index([mt_crane_id], map: "mt_fk")
+}
+
+model maintain_fts {
+  maintain_FTS_id Int     @id @default(autoincrement())
+  desc_FTS        String? @db.VarChar(50)
+  downtime_FTS    String? @db.VarChar(50)
+  start_time_FTS  String? @db.VarChar(50)
+  mt_FTS_id       Int
+  group           Int     @default(1)
+  noti            Boolean @default(false)
+  noti_day        Int     @default(30)
+  fts             fts     @relation(fields: [mt_FTS_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_fts_mt")
+
+  @@index([mt_FTS_id], map: "fk_fts_mt")
+}
+
+model solution_carrier_order {
+  s_id                   Int
+  order_id               Int
+  start_time             DateTime      @db.DateTime(0)
+  finish_time            DateTime      @db.DateTime(0)
+  penalty_cost           Float         @db.Float
+  reward                 Float         @db.Float
+  total_cost             Int           @default(0)
+  total_consumption_cost Int           @default(0)
+  total_wage_cost        Int           @default(0)
+  plan                   String        @default("A")
+  carrier_order          carrier_order @relation(fields: [order_id], references: [or_id], onDelete: NoAction, onUpdate: NoAction, map: "solution_carrier_order_ibfk_2")
+  solutions              solutions     @relation(fields: [s_id], references: [id], onUpdate: Restrict, map: "solution_carrier_order_ibfk_3")
+
+  @@id([s_id, order_id])
+  @@index([order_id], map: "order_id")
+}
+
+model solution_crane_schedule {
+  solution_id      Int
+  order_id         Int
+  carrier_id       Int
+  start_time       DateTime? @db.DateTime(0)
+  due_time         DateTime? @db.DateTime(0)
+  operation_time   Float?    @db.Float
+  Setup_time       Float?    @db.Float
+  travel_Distance  Float?    @db.Float
+  travel_time      Float?    @db.Float
+  operation_rate   Float?    @db.Float
+  consumption_rate Float?    @db.Float
+  crane_id         Int
+  bulk             Int
+  load_cargo       Float     @db.Float
+  cargo_id         Int
+  penalty_cost     Float     @db.Float
+  reward           Float     @db.Float
+  plan             String    @default("A")
+  carrier          carrier   @relation(fields: [carrier_id], references: [cr_id], onDelete: NoAction, onUpdate: NoAction, map: "solution_crane_schedule_ibfk_1")
+  crane            crane     @relation(fields: [crane_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "solution_crane_schedule_ibfk_2")
+  cargo            cargo     @relation(fields: [cargo_id], references: [cargo_id], onDelete: NoAction, onUpdate: NoAction, map: "solution_crane_schedule_ibfk_3")
+  solutions        solutions @relation(fields: [solution_id], references: [id], onUpdate: Restrict, map: "solution_crane_schedule_ibfk_4")
+
+  @@id([solution_id, order_id, carrier_id, crane_id, bulk])
+  @@index([cargo_id], map: "cargo_id")
+  @@index([carrier_id], map: "carrier_id")
+  @@index([crane_id], map: "crane_id")
+}
+
+model solution_schedule {
+  solution_id      Int
+  FTS_id           Int
+  order_id         Int
+  carrier_id       Int
+  lat              Float?
+  lng              Float?
+  arrivaltime      DateTime? @db.DateTime(0)
+  exittime         DateTime? @db.DateTime(0)
+  operation_time   Float?    @db.Float
+  Setup_time       Float?    @db.Float
+  travel_Distance  Float?
+  travel_time      Float?    @db.Float
+  operation_rate   Float?    @db.Float
+  consumption_rate Float?    @db.Float
+  cargo_id         Int       @default(0)
+  plan             String    @default("A")
+  solutions        solutions @relation(fields: [solution_id], references: [id], onUpdate: Restrict, map: "solution_schedule_ibfk_1")
+
+  @@id([solution_id, FTS_id, order_id, carrier_id])
+  @@index([FTS_id], map: "fk_fts22_id")
+}
+
+model users {
+  id       Int    @id @default(autoincrement())
+  username String @unique
+  password String
+  roles    String @default("Viewer") @db.VarChar(20)
+  group    Int    @default(1)
+}
+
+model solutions {
+  id                      Int                       @unique @default(autoincrement())
+  user_group              Int
+  plan_name               String                    @unique
+  started_at              DateTime?
+  ended_at                DateTime?
+  created_at              DateTime
+  updated_at              DateTime                  @updatedAt
+  plan_type               String
+  crane_solution          crane_solution[]
+  solution_carrier_order  solution_carrier_order[]
+  solution_crane_schedule solution_crane_schedule[]
+  solution_schedule       solution_schedule[]
+
+  @@id([id, user_group])
+}
